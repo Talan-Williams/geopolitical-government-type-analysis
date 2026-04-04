@@ -1,0 +1,36 @@
+---
+title: "Geopolitical Government Type Analysis"
+format: html
+author: Talan Williams
+---
+
+## Data
+
+My document is about government types. The data set: democracy_data contains 208 countries with data for each year from 1950 through 2020. There are 43 variables, including 11 character, 15 dbl, and 17 logical variables. Of the 43 variables are 40 variables that display information about the government type for each observation, which represents a year for a country. The 3 remaining variables are country_name, country_code, and year.
+
+### Cleansing:
+
+The dataset was cleaned in R using the dplyr, janitor, tidyr, and stringr packages. First, the uncleaned democracy data was imported from the democracyData package. Column names were subjected to the clean_names() function so they had a consistent lowercase, underscore-separated format. Then, only the variables relevant to the data set were kept, with most of them being renamed to more descriptive names. After this, the election_month variable was cleaned by using na_if() to recode "?" values to NA values. Then it was split into election_month and election_year by separating the month from the year. An electoral_category_index variable was also created, using case_match() to assign 0 as “no elections,” 1 as “single-party elections,” 2 as “non-democratic multi-party elections,” and 3 as “democratic elections.” Finally, many variables were converted to the appropriate data types using the tidyselect package.
+
+### Research Questions:
+
+#### Using This Dataset
+
+Are regime changes associated with shifts in electoral systems or suffrage?
+
+What is the relationship between political systems and leadership characteristics?
+
+#### Using Supplemental Data
+
+What is the impact of electoral systems on social outcomes?
+
+Is female political leadership associated with better public health outcomes?
+
+## Sketches
+
+![](female_leaders.png) ![](Untitled-2026-01-27-1704.png)
+
+```{r}
+democracy_data <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2024/2024-11-05/democracy_data.csv')
+unique(democracy_data$country_code)
+```
