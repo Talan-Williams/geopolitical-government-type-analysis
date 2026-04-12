@@ -4,6 +4,10 @@ format: html
 author: Talan Williams
 ---
 
+```{r}
+library(tidyverse)
+```
+
 ## Data
 
 My document is about government types. The data set: democracy_data contains 208 countries with data for each year from 1950 through 2020. There are 43 variables, including 11 character, 15 dbl, and 17 logical variables. Of the 43 variables are 40 variables that display information about the government type for each observation, which represents a year for a country. The 3 remaining variables are country_name, country_code, and year.
@@ -32,5 +36,22 @@ Is female political leadership associated with better public health outcomes?
 
 ```{r}
 democracy_data <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2024/2024-11-05/democracy_data.csv')
-unique(democracy_data$country_code)
+countries <- unique(democracy_data$country_code)
+```
+
+# Week 2
+
+For this week's checkpoint, I am contributing by finding the percentage of recorded years where each country was a democracy. I did this by creating a function
+
+```{r}
+democ_func <- function(x){
+  mean(x, na.rm = TRUE) * 100
+}
+democracy_data |>
+  group_by(country_code) |>
+  summarize(
+    total_years = sum(!is.na(is_democracy)),
+    democratic_years = sum(is_democracy, na.rm = TRUE),
+    pct_democ = democ_func(is_democracy)
+  )
 ```

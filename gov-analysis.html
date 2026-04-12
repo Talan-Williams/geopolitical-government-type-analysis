@@ -106,6 +106,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.2.0     ✔ readr     2.1.6
+✔ forcats   1.0.1     ✔ stringr   1.6.0
+✔ ggplot2   4.0.2     ✔ tibble    3.3.1
+✔ lubridate 1.9.5     ✔ tidyr     1.3.2
+✔ purrr     1.2.1     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
+</div>
+</div>
 <section id="data" class="level2">
 <h2 class="anchored" data-anchor-id="data">Data</h2>
 <p>My document is about government types. The data set: democracy_data contains 208 countries with data for each year from 1950 through 2020. There are 43 variables, including 11 character, 15 dbl, and 17 logical variables. Of the 43 variables are 40 variables that display information about the government type for each observation, which represents a year for a country. The 3 remaining variables are country_name, country_code, and year.</p>
@@ -131,7 +146,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="sketches">Sketches</h2>
 <p><img src="female_leaders.png" class="img-fluid"> <img src="Untitled-2026-01-27-1704.png" class="img-fluid"></p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>democracy_data <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(<span class="st">'https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2024/2024-11-05/democracy_data.csv'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>democracy_data <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(<span class="st">'https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2024/2024-11-05/democracy_data.csv'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Rows: 14768 Columns: 43
 ── Column specification ────────────────────────────────────────────────────────
@@ -143,26 +158,38 @@ lgl (17): is_monarchy, is_commonwealth, is_female_monarch, is_democracy, is_...
 ℹ Use `spec()` to retrieve the full column specification for this data.
 ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(democracy_data<span class="sc">$</span>country_code)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>countries <span class="ot">&lt;-</span> <span class="fu">unique</span>(democracy_data<span class="sc">$</span>country_code)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="week-2" class="level1">
+<h1>Week 2</h1>
+<p>For this week’s checkpoint, I am contributing by finding the percentage of recorded years where each country was a democracy. I did this by creating a function</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>democ_func <span class="ot">&lt;-</span> <span class="cf">function</span>(x){</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>(x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">*</span> <span class="dv">100</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>democracy_data <span class="sc">|&gt;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(country_code) <span class="sc">|&gt;</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_years =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(is_democracy)),</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">democratic_years =</span> <span class="fu">sum</span>(is_democracy, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">pct_democ =</span> <span class="fu">democ_func</span>(is_democracy)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>  [1] "AFG" "ALB" "DZA" "AGO" "AIA" "ATG" "ARG" "ARM" "ABW" "AUS" "AUT" "AZE"
- [13] "BHS" "BHR" "BGD" "BRB" "BLR" "BEL" "BLZ" "BEN" "BMU" "BTN" "BOL" "BIH"
- [25] "BWA" "BRA" "VGB" "BRN" "BGR" "BFA" "BDI" "KHM" "CMR" "CAN" "CPV" "CYM"
- [37] "CAF" "TCD" "CHL" "CHN" "COL" "COM" "ZAR" "COG" "COK" "CRI" "CIV" "HRV"
- [49] "CUB" "CUW" "CYP" "CZE" "DNK" "DJI" "DMA" "DOM" "ECU" "EGY" "SLV" "GNQ"
- [61] "ERI" "EST" "ETH" "FJI" "FIN" "FRA" "GAB" "GMB" "GEO" "GER" "GHA" "GIB"
- [73] "GRC" "GRD" "GUM" "GTM" "GIN" "GNB" "GUY" "HTI" "HND" "HKG" "HUN" "ISL"
- [85] "IND" "IDN" "IRN" "IRQ" "IRL" "ISR" "ITA" "JAM" "JPN" "JOR" "KAZ" "KEN"
- [97] "KIR" "PRK" "KOR" "KWT" "KGZ" "LAO" "LVA" "LBN" "LSO" "LBR" "LBY" "LIE"
-[109] "LTU" "LUX" "MAC" "MDG" "MWI" "MYS" "MDV" "MLI" "MLT" "MHL" "MRT" "MUS"
-[121] "MEX" "FSM" "MDA" "MCO" "MNG" "MNE" "MAR" "MOZ" "MMR" "NAM" "NUR" "NPL"
-[133] "NLD" "NZL" "NIC" "NER" "NGA" "MNP" "MKD" "NOR" "OMN" "PAK" "PLW" "PAN"
-[145] "PNG" "PRY" "PER" "PHL" "POL" "PRT" "PRI" "QAT" "ROM" "RUS" "RWA" "WSM"
-[157] "STP" "SAU" "SEN" "SRB" "SYC" "SLE" "SGP" "SXM" "SVK" "SVN" "SLB" "SOM"
-[169] "ZAF" "SSD" "ESP" "LKA" "KNA" "LCA" "VCT" "SDN" "SUR" "SWZ" "SWE" "CHE"
-[181] "SYR" "TWN" "TJK" "TZA" "THA" "TLS" "TGO" "TON" "TTO" "TUN" "TUR" "TKM"
-[193] "TCA" "TUV" "UGA" "UKR" "ARE" "GBR" "USA" "URY" "VIR" "UZB" "VUT" "VEN"
-[205] "VNM" "YEM" "ZMB" "ZWE"</code></pre>
+<pre><code># A tibble: 208 × 4
+   country_code total_years democratic_years pct_democ
+   &lt;chr&gt;              &lt;int&gt;            &lt;int&gt;     &lt;dbl&gt;
+ 1 ABW                   71               71     100  
+ 2 AFG                   71                0       0  
+ 3 AGO                   71                0       0  
+ 4 AIA                   71               62      87.3
+ 5 ALB                   71               28      39.4
+ 6 ARE                   71                0       0  
+ 7 ARG                   71               54      76.1
+ 8 ARM                   71               25      35.2
+ 9 ATG                   71               50      70.4
+10 AUS                   71               71     100  
+# ℹ 198 more rows</code></pre>
 </div>
 </div>
 </section>
