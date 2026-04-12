@@ -6,6 +6,7 @@ author: Talan Williams
 
 ```{r}
 library(tidyverse)
+library(tidytuesdayR)
 ```
 
 ## Data
@@ -39,14 +40,25 @@ democracy_data <- readr::read_csv('https://raw.githubusercontent.com/rfordatasci
 countries <- unique(democracy_data$country_code)
 ```
 
-# Week 2
-
-For this week's checkpoint, I am contributing by finding the percentage of recorded years where each country was a democracy. I did this by creating a function
+## Week 2
 
 ```{r}
+tuesdata <- tidytuesdayR::tt_load('2024-11-05')
+dem_df<- tuesdata$democracy_data
+```
+
+### Two Summaries (Unaltered Columns)
+
+#### Summary 1: custom function: percentage of recorded years where each country was a democracy
+
+```{r}
+democracy_data <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2024/2024-11-05/democracy_data.csv')
+countries <- unique(democracy_data$country_code)
+
 democ_func <- function(x){
   mean(x, na.rm = TRUE) * 100
 }
+
 democracy_data |>
   group_by(country_code) |>
   summarize(
@@ -54,4 +66,62 @@ democracy_data |>
     democratic_years = sum(is_democracy, na.rm = TRUE),
     pct_democ = democ_func(is_democracy)
   )
+```
+
+#### Summary 2: iterated total representatives from each country
+
+```{r}
+democracy_data <- tuesdata$democracy_data
+countries <- unique(democracy_data$country_name)
+total_reps <- numeric(length(countries))
+
+for (i in seq_along(countries)) {
+  this_country <- countries[i]
+  
+  total_reps[i] <- sum(
+    democracy_data$lower_house_members[democracy_data$country_name == this_country],
+    na.rm = TRUE)}
+
+country_rep_summary <- data.frame(
+  country_name = countries,
+  total_lower_house_members = total_reps)
+
+country_rep_summary <- country_rep_summary[order(-country_rep_summary$total_lower_house_members), ]
+
+
+knitr::kable(
+  head(country_rep_summary, 20),
+  col.names = c("Country", "Total Lower House Members"),
+  caption = "Total lower house members by country")
+```
+
+### Two Summaries (Altered Columns)
+
+#### Summary 1: Custom function w/ iteration - average democracy index over recorded history per country
+
+```{r}
+avg_dem <- function(country) {
+  dem_df %>%
+    filter(country_name == country) %>%
+    summarize(avg = mean(spatial_democracy, na.rm = TRUE)) %>%
+    pull(avg)
+}
+
+avg_df <- dem_df %>%
+  distinct(country_name) %>%
+  mutate(Average_Democracy = map_dbl(country_name, avg_dem))
+
+head(avg_df)
+```
+
+#### Summary 2: ratio of lower to upper house members
+
+```{r}
+house_ratio <- dem_df %>%
+  filter(is.na(lower_house_members)==FALSE & is.na(upper_house_members)==FALSE)%>%
+  mutate(chamber_ratio = lower_house_members/upper_house_members)
+
+house_ratio %>%
+  select(country_name,chamber_ratio)%>%
+  head(30)
 ```

@@ -120,6 +120,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 ✖ dplyr::lag()    masks stats::lag()
 ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
 </div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidytuesdayR)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <section id="data" class="level2">
 <h2 class="anchored" data-anchor-id="data">Data</h2>
@@ -146,7 +147,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="sketches">Sketches</h2>
 <p><img src="female_leaders.png" class="img-fluid"> <img src="Untitled-2026-01-27-1704.png" class="img-fluid"></p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>democracy_data <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(<span class="st">'https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2024/2024-11-05/democracy_data.csv'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>democracy_data <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(<span class="st">'https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2024/2024-11-05/democracy_data.csv'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Rows: 14768 Columns: 43
 ── Column specification ────────────────────────────────────────────────────────
@@ -158,23 +159,66 @@ lgl (17): is_monarchy, is_commonwealth, is_female_monarch, is_democracy, is_...
 ℹ Use `spec()` to retrieve the full column specification for this data.
 ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>countries <span class="ot">&lt;-</span> <span class="fu">unique</span>(democracy_data<span class="sc">$</span>country_code)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>countries <span class="ot">&lt;-</span> <span class="fu">unique</span>(democracy_data<span class="sc">$</span>country_code)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
-<section id="week-2" class="level1">
-<h1>Week 2</h1>
-<p>For this week’s checkpoint, I am contributing by finding the percentage of recorded years where each country was a democracy. I did this by creating a function</p>
+<section id="week-2" class="level2">
+<h2 class="anchored" data-anchor-id="week-2">Week 2</h2>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>democ_func <span class="ot">&lt;-</span> <span class="cf">function</span>(x){</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>(x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">*</span> <span class="dv">100</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>democracy_data <span class="sc">|&gt;</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(country_code) <span class="sc">|&gt;</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_years =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(is_democracy)),</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">democratic_years =</span> <span class="fu">sum</span>(is_democracy, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">pct_democ =</span> <span class="fu">democ_func</span>(is_democracy)</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>tuesdata <span class="ot">&lt;-</span> tidytuesdayR<span class="sc">::</span><span class="fu">tt_load</span>(<span class="st">'2024-11-05'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>---- Compiling #TidyTuesday Information for 2024-11-05 ----
+--- There is 1 file available ---
+
+
+── Downloading files ───────────────────────────────────────────────────────────
+
+  1 of 1: "democracy_data.csv"</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: The `file` argument of `vroom()` must use `I()` for literal data as of vroom
+1.5.0.
+  
+  # Bad:
+  vroom("X,Y\n1.5,2.3\n")
+  
+  # Good:
+  vroom(I("X,Y\n1.5,2.3\n"))
+ℹ The deprecated feature was likely used in the readr package.
+  Please report the issue at &lt;https://github.com/tidyverse/readr/issues&gt;.</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>dem_df<span class="ot">&lt;-</span> tuesdata<span class="sc">$</span>democracy_data</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="two-summaries-unaltered-columns" class="level3">
+<h3 class="anchored" data-anchor-id="two-summaries-unaltered-columns">Two Summaries (Unaltered Columns)</h3>
+<section id="summary-1-custom-function-percentage-of-recorded-years-where-each-country-was-a-democracy" class="level4">
+<h4 class="anchored" data-anchor-id="summary-1-custom-function-percentage-of-recorded-years-where-each-country-was-a-democracy">Summary 1: custom function: percentage of recorded years where each country was a democracy</h4>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>democracy_data <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(<span class="st">'https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2024/2024-11-05/democracy_data.csv'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 14768 Columns: 43
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (11): country_name, country_code, regime_category, monarch_name, preside...
+dbl (15): year, regime_category_index, monarch_accession_year, monarch_birth...
+lgl (17): is_monarchy, is_commonwealth, is_female_monarch, is_democracy, is_...
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>countries <span class="ot">&lt;-</span> <span class="fu">unique</span>(democracy_data<span class="sc">$</span>country_code)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>democ_func <span class="ot">&lt;-</span> <span class="cf">function</span>(x){</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>(x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">*</span> <span class="dv">100</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>democracy_data <span class="sc">|&gt;</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(country_code) <span class="sc">|&gt;</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_years =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(is_democracy)),</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">democratic_years =</span> <span class="fu">sum</span>(is_democracy, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">pct_democ =</span> <span class="fu">democ_func</span>(is_democracy)</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 208 × 4
    country_code total_years democratic_years pct_democ
@@ -192,6 +236,208 @@ lgl (17): is_monarchy, is_commonwealth, is_female_monarch, is_democracy, is_...
 # ℹ 198 more rows</code></pre>
 </div>
 </div>
+</section>
+<section id="summary-2-iterated-total-representatives-from-each-country" class="level4">
+<h4 class="anchored" data-anchor-id="summary-2-iterated-total-representatives-from-each-country">Summary 2: iterated total representatives from each country</h4>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>democracy_data <span class="ot">&lt;-</span> tuesdata<span class="sc">$</span>democracy_data</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>countries <span class="ot">&lt;-</span> <span class="fu">unique</span>(democracy_data<span class="sc">$</span>country_name)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>total_reps <span class="ot">&lt;-</span> <span class="fu">numeric</span>(<span class="fu">length</span>(countries))</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(countries)) {</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  this_country <span class="ot">&lt;-</span> countries[i]</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  total_reps[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    democracy_data<span class="sc">$</span>lower_house_members[democracy_data<span class="sc">$</span>country_name <span class="sc">==</span> this_country],</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">na.rm =</span> <span class="cn">TRUE</span>)}</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>country_rep_summary <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">country_name =</span> countries,</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">total_lower_house_members =</span> total_reps)</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>country_rep_summary <span class="ot">&lt;-</span> country_rep_summary[<span class="fu">order</span>(<span class="sc">-</span>country_rep_summary<span class="sc">$</span>total_lower_house_members), ]</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(country_rep_summary, <span class="dv">20</span>),</span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Country"</span>, <span class="st">"Total Lower House Members"</span>),</span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">"Total lower house members by country"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Total lower house members by country</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;"></th>
+<th style="text-align: left;">Country</th>
+<th style="text-align: right;">Total Lower House Members</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">40</td>
+<td style="text-align: left;">China</td>
+<td style="text-align: right;">122260</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">107</td>
+<td style="text-align: left;">Libya</td>
+<td style="text-align: right;">94678</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">154</td>
+<td style="text-align: left;">Russia</td>
+<td style="text-align: right;">49915</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">192</td>
+<td style="text-align: left;">Turkmenistan</td>
+<td style="text-align: right;">46626</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">198</td>
+<td style="text-align: left;">United Kingdom</td>
+<td style="text-align: right;">45567</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">91</td>
+<td style="text-align: left;">Italy</td>
+<td style="text-align: right;">44192</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">70</td>
+<td style="text-align: left;">Germany</td>
+<td style="text-align: right;">39582</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">66</td>
+<td style="text-align: left;">France</td>
+<td style="text-align: right;">39273</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">98</td>
+<td style="text-align: left;">Korea, People’s Republic</td>
+<td style="text-align: right;">38419</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">85</td>
+<td style="text-align: left;">India</td>
+<td style="text-align: right;">37213</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">93</td>
+<td style="text-align: left;">Japan</td>
+<td style="text-align: right;">34591</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">191</td>
+<td style="text-align: left;">Turkey</td>
+<td style="text-align: right;">34052</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">149</td>
+<td style="text-align: left;">Poland</td>
+<td style="text-align: right;">32468</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">205</td>
+<td style="text-align: left;">Vietnam</td>
+<td style="text-align: right;">31019</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">26</td>
+<td style="text-align: left;">Brazil</td>
+<td style="text-align: right;">30918</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">199</td>
+<td style="text-align: left;">United States</td>
+<td style="text-align: right;">30893</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">86</td>
+<td style="text-align: left;">Indonesia</td>
+<td style="text-align: right;">29684</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">153</td>
+<td style="text-align: left;">Romania</td>
+<td style="text-align: right;">27768</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">49</td>
+<td style="text-align: left;">Cuba</td>
+<td style="text-align: right;">25949</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">121</td>
+<td style="text-align: left;">Mexico</td>
+<td style="text-align: right;">24739</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+</section>
+<section id="two-summaries-altered-columns" class="level3">
+<h3 class="anchored" data-anchor-id="two-summaries-altered-columns">Two Summaries (Altered Columns)</h3>
+<section id="summary-1-custom-function-w-iteration---average-democracy-index-over-recorded-history-per-country" class="level4">
+<h4 class="anchored" data-anchor-id="summary-1-custom-function-w-iteration---average-democracy-index-over-recorded-history-per-country">Summary 1: Custom function w/ iteration - average democracy index over recorded history per country</h4>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>avg_dem <span class="ot">&lt;-</span> <span class="cf">function</span>(country) {</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  dem_df <span class="sc">%&gt;%</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(country_name <span class="sc">==</span> country) <span class="sc">%&gt;%</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarize</span>(<span class="at">avg =</span> <span class="fu">mean</span>(spatial_democracy, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pull</span>(avg)</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>avg_df <span class="ot">&lt;-</span> dem_df <span class="sc">%&gt;%</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(country_name) <span class="sc">%&gt;%</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Average_Democracy =</span> <span class="fu">map_dbl</span>(country_name, avg_dem))</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(avg_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 2
+  country_name        Average_Democracy
+  &lt;chr&gt;                           &lt;dbl&gt;
+1 Afghanistan                    0.130 
+2 Albania                        0.521 
+3 Algeria                        0.143 
+4 Angola                         0.0951
+5 Anguilla                       0.972 
+6 Antigua and Barbuda            0.965 </code></pre>
+</div>
+</div>
+</section>
+<section id="summary-2-ratio-of-lower-to-upper-house-members" class="level4">
+<h4 class="anchored" data-anchor-id="summary-2-ratio-of-lower-to-upper-house-members">Summary 2: ratio of lower to upper house members</h4>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>house_ratio <span class="ot">&lt;-</span> dem_df <span class="sc">%&gt;%</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">is.na</span>(lower_house_members)<span class="sc">==</span><span class="cn">FALSE</span> <span class="sc">&amp;</span> <span class="fu">is.na</span>(upper_house_members)<span class="sc">==</span><span class="cn">FALSE</span>)<span class="sc">%&gt;%</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">chamber_ratio =</span> lower_house_members<span class="sc">/</span>upper_house_members)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>house_ratio <span class="sc">%&gt;%</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(country_name,chamber_ratio)<span class="sc">%&gt;%</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">30</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 30 × 2
+   country_name chamber_ratio
+   &lt;chr&gt;                &lt;dbl&gt;
+ 1 Afghanistan           2.57
+ 2 Afghanistan           2.57
+ 3 Afghanistan           2.57
+ 4 Afghanistan           2.57
+ 5 Afghanistan           2.57
+ 6 Afghanistan           2.57
+ 7 Afghanistan           2.57
+ 8 Afghanistan           2.57
+ 9 Afghanistan           1.83
+10 Afghanistan           1.83
+# ℹ 20 more rows</code></pre>
+</div>
+</div>
+</section>
+</section>
 </section>
 
 </main>
