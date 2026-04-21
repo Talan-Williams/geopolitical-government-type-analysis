@@ -1,0 +1,457 @@
+---
+title: "Unit 1 Project: Geopolitical System Analysis"
+format: html
+editor: visual
+---
+
+#### Data
+
+```{r}
+#| eval: false
+install.packages("tidytuesdayR")
+```
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load('2024-11-05')
+library(tidyverse)
+```
+## Week 1
+
+#### Data Context
+
+This data shows almost/every country and different aspects about the style of their government. Some of these aspects include the category of regime, status of commonwealth vs. monarchy, communist nature, and details of their parliament (if they have one of course). It even includes aspects of delayed/free and fair elections which I think could be very useful towards deducing interesting connections between a susceptibility towards more authoritarian states and delayed elections being regular.
+
+#### Cleaning
+
+The most present clue I saw for data cleaning in this set was the amount of NA's there were for different variables. This makes total sense and was unavoidable due to the nature of the dataset, since many questions were simply unanswerable if you did not have the corresponding form of government. Examples of this include an inability to have an entry for "Number of parliamentary chambers" if you don't have a parliament, or "Election system" if you don't have some semblance of a democratic system.
+
+#### Two Research Questions (this Data)
+
+1.  Can the "postponed election" variable predict a change from a democracy to an authoritarian regime?
+2.  Is there a significant relationship between Election System and Electoral Category Index?
+
+#### Two Research Questions (Supplemental Data)
+
+1.  It would be really nice if we had some supplemental data on Human Development Index, because then naturally my question would be, is there a relationship between HDI and Election Systems.
+2.  I would also like to focus on the decades at a time, and some quantitative data about percentage of population lost in wars per decade, then try and find some relationship between war death and average regime category index per decade specifically for non-democratic countries.
+
+#### Two Visualizations
+
+1.  ![Electoral System v. Electoral Category Index](images/visual3.png)
+2.  ![Civilian Deaths v. Regime Index](images/visual2.png)
+
+
+## Week 2
+
+```{r}
+dem_df<- tuesdata$democracy_data
+```
+
+### Two Summaries (Unaltered Columns)
+
+#### Summary 1: custom function: percentage of recorded years where each country was a democracy
+
+```{r}
+democracy_data <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2024/2024-11-05/democracy_data.csv')
+countries <- unique(democracy_data$country_code)
+
+democ_func <- function(x){
+  mean(x, na.rm = TRUE) * 100
+}
+
+democracy_data |>
+  group_by(country_code) |>
+  summarize(
+    total_years = sum(!is.na(is_democracy)),
+    democratic_years = sum(is_democracy, na.rm = TRUE),
+    pct_democ = democ_func(is_democracy)
+  )
+```
+
+#### Summary 2: iterated total representatives from each country
+
+```{r}
+democracy_data <- tuesdata$democracy_data
+countries <- unique(democracy_data$country_name)
+total_reps <- numeric(length(countries))
+
+for (i in seq_along(countries)) {
+  this_country <- countries[i]
+  
+  total_reps[i] <- sum(
+    democracy_data$lower_house_members[democracy_data$country_name == this_country],
+    na.rm = TRUE)}
+
+country_rep_summary <- data.frame(
+  country_name = countries,
+  total_lower_house_members = total_reps)
+
+country_rep_summary <- country_rep_summary[order(-country_rep_summary$total_lower_house_members), ]
+
+
+knitr::kable(
+  head(country_rep_summary, 20),
+  col.names = c("Country", "Total Lower House Members"),
+  caption = "Total lower house members by country")
+```
+
+### Two Summaries (Altered Columns)
+
+#### Summary 1: Custom function w/ iteration - average democracy index over recorded history per country
+
+```{r}
+avg_dem <- function(country) {
+  dem_df %>%
+    filter(country_name == country) %>%
+    summarize(avg = mean(spatial_democracy, na.rm = TRUE)) %>%
+    pull(avg)
+}
+
+avg_df <- dem_df %>%
+  distinct(country_name) %>%
+  mutate(Average_Democracy = map_dbl(country_name, avg_dem))
+
+head(avg_df)
+```
+
+#### Summary 2: ratio of lower to upper house members
+
+```{r}
+house_ratio <- dem_df %>%
+  filter(is.na(lower_house_members)==FALSE & is.na(upper_house_members)==FALSE)%>%
+  mutate(chamber_ratio = lower_house_members/upper_house_members)
+
+house_ratio %>%
+  select(country_name,chamber_ratio)%>%
+  head(30)
+```
+
+
+## Week 3
+
+## Population API
+```{r}
+
+library(httr)
+library(tidyjson)
+library(jsonlite)
+library(tidyverse)
+library(glue)
+```
+
+```{r}
+base_url <- "https://api.api-ninjas.com/v1/population"
+
+api <- "T3YcM1il6uhoPDhXBQP5XYgMnkY40zEF6boE3DBn"
+```
+
+#### Creating a function for the API (specifically historical population)
+
+```{r}
+
+get_pop_data <- function(country) {
+  country_url <- glue("{base_url}?country={URLencode(country)}")
+  countries <- GET(country_url, add_headers("X-Api-Key" = api))
+  tx <- content(countries, "text", encoding = "UTF-8")
+  if (tx==""){
+    return(NA)
+  }
+  countries_data <- fromJSON(tx)
+  if(is.null(countries_data$historical_population)) {
+    return(NULL)
+  }
+  countries_data <- countries_data$historical_population %>%
+    mutate(country = country)
+  return(countries_data)
+}
+
+```
+
+#### Mapping the function to each country
+
+```{r}
+#|eval: false
+pop_data <- map(unique(dem_df$country_name), .f = get_pop_data)
+```
+
+#### So I hopefully don't have to call an API a million times, (used Chat suggestions that it was RDS and not CSV).
+
+```{r}
+#| eval: false
+saveRDS(pop_data,"pop_data.rds")
+```
+
+```{r}
+pop_data <- read_rds("pop_data.rds")
+```
+
+#### Scrapping NULL lists and narrowing down to population
+
+```{r}
+clean_df <- pop_data %>%
+  keep(~ length(.x)>0) %>%
+  map(~.x %>% select(country, year,population)) %>%
+  bind_rows()
+
+head(clean_df)
+```
+
+#### Making the data match 
+
+```{r}
+dem2_df <- dem_df %>%
+  filter(year>=1955 & year%%5==0)%>%
+  rename(country = "country_name")
+
+head(dem2_df)
+```
+
+```{r}
+clean2_df <- clean_df %>%
+  filter(year%%5==0) %>%
+  arrange(country, year)
+
+head(clean2_df)
+```
+
+#### Joining data into one data frame
+
+```{r}
+final_df <- left_join(dem2_df, clean2_df, by = c("country", "year"))
+
+head(final_df[c("country","year","population")])
+```
+
+#### final_df now contains populations for each country every five years. This
+#### will be really useful because now we can adjust representation for population.
+
+
+## API GDP Data
+
+```{r}
+base_url2 <- "https://api.api-ninjas.com/v1/gdp"
+```
+
+#### Creation of a function for the API
+
+```{r}
+
+get_gdp_data <- function(country) {
+  country_url2 <- glue("{base_url2}?country={URLencode(country)}")
+  countries2 <- GET(country_url2, add_headers("X-Api-Key" = api))
+  tx2 <- content(countries2, "text", encoding = "UTF-8")
+  if (tx2==""){
+    return(NA)
+  }
+  countries_data2 <- fromJSON(tx2)
+  if(is.null(countries_data2$gdp_per_capita_nominal)) {
+    return(NULL)
+  }
+  countries_data2 <- countries_data2 %>%
+    select(country, year, gdp_per_capita_nominal)
+  return(countries_data2)
+}
+
+```
+
+#### Mapping to each country
+
+```{r}
+#| eval: false
+gdp_data <- map(unique(dem_df$country_code), .f = get_gdp_data)
+```
+
+#### Saving to an RDS
+
+```{r}
+#| eval: false
+saveRDS(gdp_data,"gdp_data.rds")
+```
+
+```{r}
+gdp_data <- read_rds("gdp_data.rds")
+```
+
+#### Trying to clean up the df a little
+
+```{r}
+clean_df2 <- gdp_data %>%
+  keep(~ length(.x)>0) %>%
+  bind_rows()
+
+head(clean_df2)
+```
+
+#### Narrowing down the years to match
+
+```{r}
+dem3_df <- dem_df %>%
+  filter(year>=1980)%>%
+  rename(country = "country_code")
+
+head(dem3_df)
+```
+
+#### Binding the data frames together
+
+```{r}
+final_df2 <- left_join(dem3_df, clean_df2, by = c("country", "year"))
+
+head(final_df2[c("country","year","gdp_per_capita_nominal")])
+```
+
+
+## Data Summary 1 (Population adjusted representation)
+
+
+#### Create pop_prop column for representation adjusted for population (used Chat for help with the function rowSums instead of having to define a seperate function to add)
+
+```{r}
+final_df <- final_df %>%
+  filter(is_democracy==TRUE)%>%
+  mutate(pop_prop = rowSums(cbind(upper_house_members,lower_house_members, third_house_members), na.rm=TRUE)/population)
+
+head(final_df[c("country", "year", "population","pop_prop")])
+```
+
+#### pop_prop represents the representative per person measurement, an population adjusted  representation number. This is calculuted by adding up all of the members of the houses per country and dividing it by their population.
+
+### CSV Reading
+
+```{r}
+happiness <- read_csv("C:/Users/grant/Downloads/whr_data.csv")
+# I'm not sure why there are empty columns beyond those we are using, the file very clearly only had 13 columns. I don't think this should be an issue, but we're not gonna be using that whole dataset anyway.
+```
+
+
+### Cleaning HDI data and merging with democracy data
+
+```{r}
+happiness_clean <- happiness %>%
+  select(
+    country_name = `Country name`,
+    year = Year,
+    well_being = `Life evaluation (3-year average)`)
+
+#find the years that both this data set and the dem_df covers, and then we'll filter the sets to match those years
+
+range(happiness_clean$year, na.rm = TRUE) # since 2011
+range(dem_df$year, na.rm = TRUE) # 1950 to 2020
+
+dem_overlap <- dem_df %>%
+  filter(year >= 2011)
+happiness_overlap <- happiness_clean %>%
+  filter(year <= 2020)
+
+# now we merge them into one data frame
+#hdiXdem_df <- dem_overlap %>%
+  #left_join(happiness_overlap, by = c("country_name", "year"))
+
+
+# this will weed out the countries that we weren't able to directly match by name
+# hdiXdem_df %>%
+# filter(is.na(well_being)) %>%
+#  distinct(country_name) %>%
+#  arrange(country_name)
+# so that gave 208 countries which surprised me because the names looked the same to me. this makes me believe i messed up on the joining of the dataframes.
+# i'm gonna try the join again, only based off name, not year as well
+
+# hdiXdem_df <- dem_overlap %>%
+ # left_join(happiness_overlap, by = "country_name")
+
+# okay that isn't what we want either, that gives us a many to many dataframe, which is bad, so what I'll do is take the average of the happiness index and democracy index across the years and compare those. For reference, we don't want the many to many dataframe because it has 13010 rows.
+
+# average of both data frames
+avg_dem <- dem_overlap %>%
+  group_by(country_name) %>%
+  summarize(avg_democracy = mean(spatial_democracy, na.rm = TRUE))
+
+avg_happiness <- happiness_overlap %>%
+  group_by(country_name) %>%
+  summarize(avg_well_being = mean(well_being, na.rm = TRUE))
+
+# new dataframe
+
+hdiXdem_df <- avg_dem %>%
+  left_join(avg_happiness, by = "country_name")
+
+# now check again for unmatched countries
+hdiXdem_df %>%
+  filter(is.na(avg_well_being)) %>%
+  distinct(country_name) %>%
+  arrange(country_name)
+#so that gives us 60 countries that are not in our happiness set that are in the democracy set. What we'll do now is use anti_join to see what countries are in the democracy set that are not in the happiness set, and vice versa.
+
+dem_not_happy <- anti_join(avg_dem, avg_happiness, by = "country_name")
+happy_not_dem <- anti_join(avg_happiness, avg_dem, by = "country_name")
+
+nrow(dem_not_happy)
+nrow(happy_not_dem)
+
+head(dem_not_happy, 20)
+happy_not_dem
+
+# after looking through it, it seems that the countries that were in dem_not_happy were a lot of small, island based nation states that don't necessarily need to be included for this to be a fair comparison. The countries in happy_not_dem were all countries with names that may be different between the two sets. these are the countries we will recode. Using my own imperfect analysis, I have chosen the countries I will use from this list of unmatched country names, and I will use this to find the names for those countries in the democracy df
+
+avg_dem %>% filter(str_detect(country_name, "Korea|Mold|Congo|Trinidad|Hong|Palest|Taiwan|Turkey|Czech|Gambia|Slov"))
+
+# now that we know the names of all the countries that we want in both data sets, I will fix the happiness dataset to match the names from the democracy set, and then we will use an inner join to only get the countries that we want.
+
+country_fix_happiness <- c(
+  "Congo" = "Congo, Republic of",
+  "Czechia" = "Czech Republic",
+  "Côte d’Ivoire" = "Ivory Coast",
+  "DR Congo" = "Congo, Dem. Rep.",
+  "Gambia" = "Gambia, The",
+  "Hong Kong SAR of China" = "Hong Kong",
+  "Lao PDR" = "Laos",
+  "Republic of Korea" = "Korea, Republic of",
+  "Republic of Moldova" = "Moldova",
+  "Russian Federation" = "Russia",
+  "Slovakia" = "Slovak Republic",
+  "State of Palestine" = "Palestine",
+  "Taiwan Province of China" = "Taiwan",
+  "Trinidad and Tobago" = "Trinidad &Tobago",
+  "Türkiye" = "Turkey",
+  "Viet Nam" = "Vietnam")
+
+avg_happiness_fixed <- happiness_overlap %>%
+  mutate(country_name = recode(country_name, !!!country_fix_happiness)) %>%
+  group_by(country_name) %>%
+  summarize(avg_well_being = mean(well_being, na.rm = TRUE), .groups = "drop")
+
+hdiXdem_df <- avg_dem %>%
+  inner_join(avg_happiness_fixed, by = "country_name")
+```
+
+### Visualization (HDI vs. Democracy Index)
+
+```{r}
+ggplot(hdiXdem_df,
+       aes(x = avg_democracy, y = avg_well_being)) +
+  geom_point() +
+  labs(
+    x = "Average Democracy",
+    y = "Average Well-Being",
+    title = "Relationship Between Democracy and Well-Being"
+  ) +
+  theme_bw()
+```
+
+
+
+#### Final HDI df combined with Population df
+
+```{r}
+happiness_clean_final<-happiness_clean %>%
+  filter(year<2021)
+```
+
+```{r}
+cleaner_df <- left_join(final_df2, happiness_clean_final, by = c("country_name","year"))
+
+head(cleaner_df[c("country_name","year","gdp_per_capita_nominal","well_being")])
+```
+
+
+
