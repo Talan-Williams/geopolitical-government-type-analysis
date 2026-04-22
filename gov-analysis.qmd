@@ -8,6 +8,10 @@ author: Talan Williams
 library(tidyverse)
 library(tidytuesdayR)
 library(countrycode)
+library(httr)
+library(tidyjson)
+library(jsonlite)
+library(glue)
 ```
 
 ## Data
@@ -37,6 +41,7 @@ Is female political leadership associated with better public health outcomes?
 ![](female_leaders.png) ![](Untitled-2026-01-27-1704.png)
 
 ```{r}
+setwd(dir="~/Documents/stat 431/geopolitical-government-type-analysis")
 democracy_data <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2024/2024-11-05/democracy_data.csv')
 countries <- unique(democracy_data$country_code)
 ```
@@ -247,4 +252,187 @@ ggplot(hdiXdem_df,
   theme_bw()
 ```
 
-This is a visualization of the realtionship between well-being and democracy index, averaged for each country over the years 2011-2020. Each point on the scatterplot represents an individual country.
+Above is a visualization of the realtionship between well-being and democracy index, averaged for each country over the years 2011-2020. Each point on the scatterplot represents an individual country.
+
+## Population API
+
+```{r}
+base_url <- "https://api.api-ninjas.com/v1/population"
+
+api <- "T3YcM1il6uhoPDhXBQP5XYgMnkY40zEF6boE3DBn"
+```
+
+#### Creating a function for the API (specifically historical population)
+
+```{r}
+
+get_pop_data <- function(country) {
+  country_url <- glue("{base_url}?country={URLencode(country)}")
+  countries <- GET(country_url, add_headers("X-Api-Key" = api))
+  tx <- content(countries, "text", encoding = "UTF-8")
+  if (tx==""){
+    return(NA)
+  }
+  countries_data <- fromJSON(tx)
+  if(is.null(countries_data$historical_population)) {
+    return(NULL)
+  }
+  countries_data <- countries_data$historical_population %>%
+    mutate(country = country)
+  return(countries_data)
+}
+
+```
+
+#### Mapping the function to each country
+
+```{r}
+#|eval: false
+  pop_data <- map(unique(dem_df$country_name), .f = get_pop_data)
+```
+
+#### So I hopefully don't have to call an API a million times, (used Chat suggestions that it was RDS and not CSV).
+
+```{r}
+#| eval: false
+saveRDS(pop_data,"pop_data.rds")
+```
+
+```{r}
+pop_data <- readRDS("pop_data.rds")
+```
+
+#### Scrapping NULL lists and narrowing down to population
+
+```{r}
+country <- "United States"
+url <- glue("{base_url}?country={URLencode(country)}")
+print(url)
+
+res <- GET(url, add_headers("X-Api-Key" = api))
+print(status_code(res))
+cat(content(res, "text", encoding = "UTF-8"))
+clean_df <- pop_data %>%
+  keep(~ length(.x)>0) %>%
+  map(~.x %>% select(country, year,population)) %>%
+  bind_rows()
+
+head(clean_df)
+```
+
+#### Making the data match
+
+```{r}
+dem2_df <- dem_df %>%
+  filter(year>=1955 & year%%5==0)%>%
+  rename(country = "country_name")
+
+head(dem2_df)
+```
+
+```{r}
+
+clean2_df <- clean_df %>%
+  filter(year%%5==0) %>%
+  arrange(country, year)
+
+head(clean2_df)
+```
+
+#### Joining data into one data frame
+
+```{r}
+final_df <- left_join(dem2_df, clean2_df, by = c("country", "year"))
+
+head(final_df[c("country","year","population")])
+```
+
+#### final_df now contains populations for each country every five years. This
+
+#### will be really useful because now we can adjust representation for population.
+
+## API GDP Data
+
+```{r}
+base_url2 <- "https://api.api-ninjas.com/v1/gdp"
+```
+
+#### Creation of a function for the API
+
+```{r}
+
+get_gdp_data <- function(country) {
+  country_url2 <- glue("{base_url2}?country={URLencode(country)}")
+  countries2 <- GET(country_url2, add_headers("X-Api-Key" = api))
+  tx2 <- content(countries2, "text", encoding = "UTF-8")
+  if (tx2==""){
+    return(NA)
+  }
+  countries_data2 <- fromJSON(tx2)
+  if(is.null(countries_data2$gdp_per_capita_nominal)) {
+    return(NULL)
+  }
+  countries_data2 <- countries_data2 %>%
+    select(country, year, gdp_per_capita_nominal)
+  return(countries_data2)
+}
+
+```
+
+#### Mapping to each country
+
+```{r}
+#| eval: false
+gdp_data <- map(unique(dem_df$country_code), .f = get_gdp_data)
+```
+
+#### Saving to an RDS
+
+```{r}
+#| eval: false
+saveRDS(gdp_data,"gdp_data.rds")
+```
+
+```{r}
+gdp_data <- read_rds("gdp_data.rds")
+```
+
+#### Trying to clean up the df a little
+
+```{r}
+clean_df2 <- gdp_data %>%
+  keep(~ length(.x)>0) %>%
+  bind_rows()
+
+head(clean_df2)
+```
+
+#### Narrowing down the years to match
+
+```{r}
+dem3_df <- dem_df %>%
+  filter(year>=1980)%>%
+  rename(country = "country_code")
+
+head(dem3_df)
+```
+
+#### Binding the data frames together
+
+```{r}
+final_df2 <- left_join(dem3_df, clean_df2, by = c("country", "year"))
+
+head(final_df2[c("country","year","gdp_per_capita_nominal")])
+```
+
+## Data Summary 1 (Population adjusted representation)
+
+#### Create pop_prop column for representation adjusted for population (used Chat for help with the function rowSums instead of having to define a seperate function to add)
+
+```{r}
+final_df <- final_df %>%
+  filter(is_democracy==TRUE)%>%
+  mutate(pop_prop = rowSums(cbind(upper_house_members,lower_house_members, third_house_members), na.rm=TRUE)/population)
+
+head(final_df[c("country", "year", "population","pop_prop")])
+```
