@@ -287,7 +287,7 @@ get_pop_data <- function(country) {
 #### Mapping the function to each country
 
 ```{r}
-#|eval: false
+#| eval: false
   pop_data <- map(unique(dem_df$country_name), .f = get_pop_data)
 ```
 
@@ -305,6 +305,7 @@ pop_data <- readRDS("pop_data.rds")
 #### Scrapping NULL lists and narrowing down to population
 
 ```{r}
+#| eval: false
 country <- "United States"
 url <- glue("{base_url}?country={URLencode(country)}")
 print(url)
@@ -312,6 +313,12 @@ print(url)
 res <- GET(url, add_headers("X-Api-Key" = api))
 print(status_code(res))
 cat(content(res, "text", encoding = "UTF-8"))
+
+```
+
+#### Making the data match
+
+```{r}
 clean_df <- pop_data %>%
   keep(~ length(.x)>0) %>%
   map(~.x %>% select(country, year,population)) %>%
@@ -319,8 +326,6 @@ clean_df <- pop_data %>%
 
 head(clean_df)
 ```
-
-#### Making the data match
 
 ```{r}
 dem2_df <- dem_df %>%
@@ -427,12 +432,67 @@ head(final_df2[c("country","year","gdp_per_capita_nominal")])
 
 ## Data Summary 1 (Population adjusted representation)
 
-#### Create pop_prop column for representation adjusted for population (used Chat for help with the function rowSums instead of having to define a seperate function to add)
+#### Create pop_prop column for representation adjusted for population (used Chat for help with the function rowSums instead of having to define a separate function to add)
 
 ```{r}
 final_df <- final_df %>%
   filter(is_democracy==TRUE)%>%
-  mutate(pop_prop = rowSums(cbind(upper_house_members,lower_house_members, third_house_members), na.rm=TRUE)/population)
+  mutate(pop_prop = population/rowSums(cbind(upper_house_members,lower_house_members, third_house_members), na.rm=TRUE)) |>
+  filter(pop_prop != Inf)
 
 head(final_df[c("country", "year", "population","pop_prop")])
+```
+
+## Checkpoint 4: Visualization Regarding RQ1
+
+Is there a relationship between person per representative and democracy index?
+
+```{r}
+library(countrycode)
+vis2 <- final_df |>
+  select(country, spatial_democracy, pop_prop) |>
+  mutate(region = countrycode(country,
+                              origin = "country.name",
+                              destination = "continent"))
+```
+
+```{r}
+library(cowplot)
+library(ggridges)
+library(scales)
+title_theme <- ggdraw() +
+  draw_label("Spatial Democracy Versus Person per Representative by Region",
+    fontfamily = "Courier",
+    fontface = "bold",
+    size = 9,
+    hjust = 0.42
+  )
+
+spa_dem <- ggplot(vis2, aes(x = spatial_democracy,
+                            y = reorder(region, spatial_democracy),
+                            fill = region)) +
+  geom_density_ridges(alpha = 0.7, color = "black", scale = 1) + 
+  scale_x_continuous(limits = c(0, 1)) +
+  labs(x = "Spatial Democracy Index",
+       y = " ") +
+  scale_fill_brewer(palette = "Dark2") +
+  guides(fill = "none")
+
+pop_dem <- ggplot(vis2, aes(x = pop_prop,
+                            y = reorder(region, pop_prop),
+                            fill = region)) +
+  geom_density_ridges(alpha = 0.7, color = "black", scale = 1) +
+  scale_x_continuous(limits = c(0, 50000),
+                     labels = label_number(scale_cut = cut_short_scale())) +
+  labs(x = "Person per Rep",
+       y = " ") +
+  scale_fill_brewer(palette = "Dark2") +
+  guides(fill = "none")
+
+gridofplots <- plot_grid(spa_dem, pop_dem, nrow = 1)
+
+plot_grid(title_theme,
+  gridofplots,
+  ncol = 1, rel_heights = c(0.2, 1.5, 0.1)
+)
 ```
