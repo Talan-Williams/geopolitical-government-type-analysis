@@ -44,6 +44,10 @@ library(glue)
 library(readxl)
 library(ggrepel)
 library(scales)
+library(leaflet)
+library(sf)
+library(tigris)
+
 ```
 
 ```{r}
@@ -173,14 +177,11 @@ hdiXdem_df <- avg_dem %>%
 
 ```
 
-```{r}
-states_dem <- read.csv(file = "SDI_2.0.csv")
-```
-
+# Global Data
 
 ## Research Question 1 {.tabset}
 
-### 1st Table and Visualization
+### Tables
 
 :::: {.rows}
 
@@ -290,15 +291,9 @@ summary(spat_model)
 ## Visualizations {.tabset}
 
 ### Dynamic Visualization
-<span style="font-size: 0.1em;">
+<span style="font-size: 1em;">
 Is there a significant relationship between spatial democracy index and population adjusted representation (people per representative)?
 </span>
-
-Put the dynamic visualization code here
-
-### Other Visualizations
-:::: {.rows}
-::: {.card}
 ```{r}
 library(countrycode)
 vis2 <- final_df |>
@@ -308,6 +303,27 @@ vis2 <- final_df |>
                               destination = "continent")) |>
   filter(!pop_prop==Inf)
 ```
+
+
+```{r}
+#| warning: false
+library(plotly)
+
+dyn_plot <- ggplot(vis2, aes(log(pop_prop),spatial_democracy,color = region))+
+  geom_jitter()+
+  geom_density_2d()+
+  labs(
+    xlab = "Population Adjusted Representation (People/Representative)",
+    ylab = "Spatial Democracy Score",
+    title = "Spatial Democracy Score vs. Population Adjusted Representation"
+  )
+
+ggplotly(dyn_plot)
+```
+
+### Other Visualizations
+:::: {.rows}
+::: {.card}
 
 ```{r}
 #| warning: false
@@ -368,3 +384,55 @@ final_df %>%
 ```
 :::
 ::::
+
+
+# Specialty Country: USA
+
+## Why this country?
+
+I chose the **United States** because it is a large federal democracy that shows patterns relating to global trends. This makes it a useful representation of democracy trends in the modern day first world. The map below shows the democracy index of each US state, ranging from less than -1.5 to greater than 1.
+
+### Country Data
+
+```{r}
+states_dem <- read.csv(file = "SDI_2.0.csv")
+states_dem <- states_dem |>
+  group_by(state) |>
+  summarize(dem_index = mean(democracy_mcmc))
+```
+
+```{r}
+#| results: hide
+states <- states(cb = TRUE, year = 2020)
+states_joined <- states |>
+  left_join(states_dem, by = c("NAME" = "state"))
+pal <- colorNumeric(
+  palette = "Blues",
+  domain = states_joined$dem_index,
+  na.color = "transparent"
+)
+```
+
+
+```{r}
+#| message: false
+#| warning: false
+
+leaflet(states_joined) |>
+  addTiles() |>
+  setView(lng = -98.35, lat = 39.5, zoom = 4) |>
+  addPolygons(
+    fillColor = ~pal(dem_index),
+    fillOpacity = 0.7,
+    color = "white",
+    weight = 1,
+    popup = ~paste0(NAME, ": ", round(dem_index, 2))
+  ) |>
+  addLegend(
+    pal = pal,
+    values = ~dem_index,
+    title = "Democracy Score",
+    position = "bottomright"
+  )
+```
+
