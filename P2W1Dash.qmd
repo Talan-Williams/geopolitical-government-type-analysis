@@ -1,5 +1,5 @@
 ---
-title: "Unit 1 Project: Geopolitical System Analysis"
+title: "Democracy Across the Globe"
 format:
   dashboard:
     theme: solar
@@ -179,7 +179,7 @@ hdiXdem_df <- avg_dem %>%
 
 ```
 
-# Global Data
+# Regional
 
 ## Research Question 1 {.tabset}
 
@@ -277,16 +277,6 @@ finalestest_df %>%
 
 ::: {.card}
 
-```{r}
-final_df <- final_df %>%
-  filter(pop_prop != Inf)
-```
-
-```{r}
-spat_model <- lm(spatial_democracy~pop_prop, data = final_df)
-
-summary(spat_model)
-```
 
 :::
 
@@ -315,9 +305,9 @@ dyn_plot <- ggplot(vis2, aes(log(pop_prop),spatial_democracy,color = region))+
   geom_jitter()+
   geom_density_2d()+
   labs(
-    xlab = "Population Adjusted Representation (People/Representative)",
-    ylab = "Spatial Democracy Score",
-    title = "Spatial Democracy Score vs. Population Adjusted Representation"
+    x = "Population Adjusted Representation (People/Representative)",
+    y = "Spatial Democracy Score",
+    title = "Spatial Democracy vs. Population Adjusted Representation"
   )
 
 ggplotly(dyn_plot)
@@ -387,7 +377,7 @@ final_df %>%
 :::
 ::::
 
-# Interactive Page
+# Country
 
 ```{r}
 #| context: setup
@@ -495,11 +485,11 @@ output$plot <- renderPlot({
 
 
 
-# Specialty Country: USA
+# USA
 
 ## Why this country?
 
-I chose the **United States** because it is a large federal democracy that shows patterns relating to global trends. This makes it a useful representation of democracy trends in the modern day first world. The map below shows the democracy index of each US state, ranging from less than -1.5 to greater than 1.
+The **United States** is a large federal democracy that shows patterns relating to global trends. This makes it a useful representation of democracy trends in the modern day first world. The map below shows the democracy index of each US state, ranging from less than -1.5 to greater than 1.
 
 ### Country Data
 
